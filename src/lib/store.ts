@@ -34,6 +34,11 @@ export interface MeshReading {
 }
 
 export interface MeshStore {
+  // ── Map mode ────────────────────────────────────────────
+  /** Current map interaction mode — controls draw controls visibility */
+  mapMode: "browse" | "query";
+  setMapMode: (mode: "browse" | "query") => void;
+
   // ── Wallet ──────────────────────────────────────────────
   /** Connected wallet address from wagmi useAccount() */
   walletAddress: string | null;
@@ -73,6 +78,10 @@ export interface MeshStore {
 }
 
 export const useMeshStore = create<MeshStore>()((set) => ({
+  // Map mode
+  mapMode: "browse",
+  setMapMode: (mode) => set({ mapMode: mode }),
+
   // Wallet
   walletAddress: null,
   setWalletAddress: (addr) => set({ walletAddress: addr }),

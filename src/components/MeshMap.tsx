@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet-draw/dist/leaflet.draw.css";
+import DrawControl from "@/components/DrawControl";
+import { useMeshStore } from "@/lib/store";
 
 /**
  * MeshMap — Client-only Leaflet map rendering device markers.
@@ -87,6 +90,7 @@ export default function MeshMap() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mapMode = useMeshStore((s) => s.mapMode);
 
   // Fetch devices on mount
   useEffect(() => {
@@ -152,6 +156,9 @@ export default function MeshMap() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        {/* Draw control — only visible in Query mode [G8] */}
+        {mapMode === "query" && <DrawControl />}
 
         {/* Device markers */}
         {devices.map((device) => {

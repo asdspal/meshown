@@ -2,7 +2,7 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useMeshStore } from "@/lib/store";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 /**
  * Floating left sidebar for the Mesh Map screen (Screen 1).
@@ -35,9 +35,11 @@ const TIME_RANGES = [
 ] as const;
 
 export default function MapSidebar() {
-  const [mode, setMode] = useState<"browse" | "query">("browse");
+  const router = useRouter();
 
   const {
+    mapMode,
+    setMapMode,
     minQualityScore,
     setMinQualityScore,
     selectedSensorType,
@@ -50,6 +52,23 @@ export default function MapSidebar() {
   } = useMeshStore();
 
   const hasBbox = boundingBox !== null;
+
+  /** Construct /query URL from Zustand state and navigate [G8] */
+  function handleRunQuery() {
+    if (!boundingBox) return;
+
+    const params = new URLSearchParams({
+      sw_lat: String(boundingBox.sw.lat),
+      sw_lng: String(boundingBox.sw.lng),
+      ne_lat: String(boundingBox.ne.lat),
+      ne_lng: String(boundingBox.ne.lng),
+      sensor_type: selectedSensorType,
+      min_quality: String(minQualityScore),
+      hours: String(timeRangeHours),
+    });
+
+    router.push(`/query?${params.toString()}`);
+  }
 
   return (
     <aside
@@ -79,9 +98,9 @@ export default function MapSidebar() {
       <div className="flex rounded-lg bg-zinc-800 p-1">
         <button
           type="button"
-          onClick={() => setMode("browse")}
+          onClick={() => setMapMode("browse")}
           className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-            mode === "browse"
+            mapMode === "browse"
               ? "bg-indigo-600 text-white shadow"
               : "text-zinc-400 hover:text-white"
           }`}
@@ -90,9 +109,9 @@ export default function MapSidebar() {
         </button>
         <button
           type="button"
-          onClick={() => setMode("query")}
+          onClick={() => setMapMode("query")}
           className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-            mode === "query"
+            mapMode === "query"
               ? "bg-indigo-600 text-white shadow"
               : "text-zinc-400 hover:text-white"
           }`}
@@ -102,7 +121,7 @@ export default function MapSidebar() {
       </div>
 
       {/* ── Query mode controls [G9] ──────────────────── */}
-      {mode === "query" && (
+      {mapMode === "query" && (
         <div className="flex flex-col gap-4">
           {/* Sensor type dropdown */}
           <label className="flex flex-col gap-1.5">
@@ -174,6 +193,7 @@ export default function MapSidebar() {
           {/* Run Mesh Query button */}
           <button
             type="button"
+            onClick={handleRunQuery}
             disabled={!hasBbox || isQuerying}
             className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
