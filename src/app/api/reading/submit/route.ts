@@ -3,7 +3,7 @@ import type { Hex } from "viem";
 import { jsonToPayload, ExpirationTime } from "@arkiv-network/sdk/utils";
 import { eq, lte, gte } from "@arkiv-network/sdk/query";
 
-import { walletClient, publicClient, PROJECT_ATTRIBUTE } from "@/lib/arkiv";
+import { walletClient, publicClient, PROJECT_ATTRIBUTE, COORD_SCALE, VALUE_SCALE } from "@/lib/arkiv";
 import { verifyWalletAuth } from "@/lib/auth";
 import { ReadingPayloadSchema } from "@/lib/schemas";
 import { computeQualityScore } from "@/lib/quality-score";
@@ -92,14 +92,29 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 5. Fetch parent device to get lat/lng/sensor_type ────
+    // Retry with delay — testnet may need time to index newly created entities
     let deviceEntity;
-    try {
-      deviceEntity = await publicClient.getEntity(deviceKey as Hex);
-    } catch {
-      return Response.json(
-        { error: "Device not found" },
-        { status: 404 },
-      );
+    const maxRetries = 3;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        deviceEntity = await publicClient.getEntity(deviceKey as Hex);
+        break; // success
+      } catch (err) {
+        if (attempt < maxRetries - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        } else {
+          console.warn(`Device getEntity failed after ${maxRetries} attempts:`, err);
+          return Response.json(
+            { error: "Device not found" },
+            { status: 404 },
+          );
+        }
+      }
+    }
+
+    // At this point deviceEntity is guaranteed defined (we returned 404 above on failure)
+    if (!deviceEntity) {
+      return Response.json({ error: "Device not found" }, { status: 404 });
     }
 
     // Extract attributes from device entity
@@ -108,16 +123,20 @@ export async function POST(request: NextRequest) {
       deviceAttrs[attr.key] = attr.value;
     }
 
-    const lat = deviceAttrs.lat;
-    const lng = deviceAttrs.lng;
+    // lat/lng are stored as scaled integers (micro-degrees), convert back to floats
+    const latRaw = deviceAttrs.lat;
+    const lngRaw = deviceAttrs.lng;
     const sensor_type = deviceAttrs.sensor_type;
 
-    if (typeof lat !== "number" || typeof lng !== "number") {
+    if (typeof latRaw !== "number" || typeof lngRaw !== "number") {
       return Response.json(
         { error: "Device missing numeric lat/lng attributes" },
         { status: 400 },
       );
     }
+
+    const lat = Number(latRaw) / COORD_SCALE;
+    const lng = Number(lngRaw) / COORD_SCALE;
 
     if (typeof sensor_type !== "string") {
       return Response.json(
@@ -182,14 +201,19 @@ export async function POST(request: NextRequest) {
       raw: payloadResult.data.raw,
     });
 
+    // Scale float values to integers for Arkiv BigInt attributes
+    const latScaled = Math.round(lat * COORD_SCALE);
+    const lngScaled = Math.round(lng * COORD_SCALE);
+    const valueScaled = Math.round(payloadResult.data.value * VALUE_SCALE);
+
     const attributes = [
       PROJECT_ATTRIBUTE,
       { key: "entityType", value: "reading" },
       { key: "sensor_type", value: sensor_type },
       { key: "device_key", value: deviceKey },
-      { key: "lat", value: lat },        // denormalised from device (§9)
-      { key: "lng", value: lng },        // denormalised from device (§9)
-      { key: "value", value: payloadResult.data.value },
+      { key: "lat", value: latScaled },        // denormalised, scaled micro-degrees (§9)
+      { key: "lng", value: lngScaled },        // denormalised, scaled micro-degrees (§9)
+      { key: "value", value: valueScaled },     // scaled centi-units
       { key: "quality_score", value: quality_score },
       { key: "timestamp", value: now },
     ];

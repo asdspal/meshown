@@ -1,6 +1,6 @@
 import { eq, gt, lt } from "@arkiv-network/sdk/query";
 
-import { publicClient, PROJECT_ATTRIBUTE } from "@/lib/arkiv";
+import { publicClient, PROJECT_ATTRIBUTE, COORD_SCALE } from "@/lib/arkiv";
 
 // ─────────────────────────────────────────────────────────────
 // Quality Score Algorithm — Blueprint §6
@@ -40,21 +40,33 @@ export async function computeQualityScore(
   radiusDeg: number = 0.05, // ~5 km
 ): Promise<number> {
   // 1. Query neighbour readings in bounding box, last 30 minutes
-  const neighbours = await publicClient
-    .buildQuery()
-    .where([
-      eq(PROJECT_ATTRIBUTE.key, PROJECT_ATTRIBUTE.value),
-      eq("entityType", "reading"),
-      eq("sensor_type", sensor_type),
-      gt("lat", lat - radiusDeg),
-      lt("lat", lat + radiusDeg),
-      gt("lng", lng - radiusDeg),
-      lt("lng", lng + radiusDeg),
-      gt("timestamp", Date.now() - 30 * 60 * 1000),
-    ])
-    .withPayload(true)
-    .limit(20)
-    .fetch();
+  //    Attributes are stored as scaled integers (micro-degrees), so scale query bounds
+  const latScaled = Math.round(lat * COORD_SCALE);
+  const lngScaled = Math.round(lng * COORD_SCALE);
+  const radiusScaled = Math.round(radiusDeg * COORD_SCALE);
+
+  let neighbours;
+  try {
+    neighbours = await publicClient
+      .buildQuery()
+      .where([
+        eq(PROJECT_ATTRIBUTE.key, PROJECT_ATTRIBUTE.value),
+        eq("entityType", "reading"),
+        eq("sensor_type", sensor_type),
+        gt("lat", latScaled - radiusScaled),
+        lt("lat", latScaled + radiusScaled),
+        gt("lng", lngScaled - radiusScaled),
+        lt("lng", lngScaled + radiusScaled),
+        gt("timestamp", Date.now() - 30 * 60 * 1000),
+      ])
+      .withPayload(true)
+      .limit(20)
+      .fetch();
+  } catch (err) {
+    // RPC timeout / context cancelled — return default score gracefully
+    console.warn("Quality score query failed, returning default 75:", err);
+    return 75;
+  }
 
   // 2. If fewer than 2 neighbours → return default score
   if (neighbours.entities.length < 2) return 75; // insufficient neighbours — default

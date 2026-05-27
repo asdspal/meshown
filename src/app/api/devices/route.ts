@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { eq, gte, lte } from "@arkiv-network/sdk/query";
 
-import { publicClient, PROJECT_ATTRIBUTE, CREATOR_WALLET_ADDRESS } from "@/lib/arkiv";
+import { publicClient, PROJECT_ATTRIBUTE, CREATOR_WALLET_ADDRESS, COORD_SCALE } from "@/lib/arkiv";
 
 // ─────────────────────────────────────────────────────────────
 // GET /api/devices
@@ -55,21 +55,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Optional: bounding-box filter on numeric lat/lng attributes
+    // Scale bbox filter values to micro-degrees (BigInt-safe integers)
     if (latMin !== null) {
       const val = parseFloat(latMin);
-      if (!isNaN(val)) predicates.push(gte("lat", val));
+      if (!isNaN(val)) predicates.push(gte("lat", Math.round(val * COORD_SCALE)));
     }
     if (latMax !== null) {
       const val = parseFloat(latMax);
-      if (!isNaN(val)) predicates.push(lte("lat", val));
+      if (!isNaN(val)) predicates.push(lte("lat", Math.round(val * COORD_SCALE)));
     }
     if (lngMin !== null) {
       const val = parseFloat(lngMin);
-      if (!isNaN(val)) predicates.push(gte("lng", val));
+      if (!isNaN(val)) predicates.push(gte("lng", Math.round(val * COORD_SCALE)));
     }
     if (lngMax !== null) {
       const val = parseFloat(lngMax);
-      if (!isNaN(val)) predicates.push(lte("lng", val));
+      if (!isNaN(val)) predicates.push(lte("lng", Math.round(val * COORD_SCALE)));
     }
 
     // ── 3. Execute query (H1: scoped to agent creator) ─────

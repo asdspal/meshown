@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import type { Hex } from "viem";
 import { jsonToPayload, ExpirationTime } from "@arkiv-network/sdk/utils";
 
-import { walletClient, PROJECT_ATTRIBUTE } from "@/lib/arkiv";
+import { walletClient, PROJECT_ATTRIBUTE, COORD_SCALE } from "@/lib/arkiv";
 import { verifyWalletAuth } from "@/lib/auth";
 import { SensorDevicePayloadSchema } from "@/lib/schemas";
 
@@ -90,12 +90,16 @@ export async function POST(request: NextRequest) {
     // ── 5. Construct payload and attributes ──────────────────
     const payload = jsonToPayload(payloadResult.data);
 
+    // Scale lat/lng to micro-degrees (BigInt-safe integers)
+    const latScaled = Math.round(lat * COORD_SCALE);
+    const lngScaled = Math.round(lng * COORD_SCALE);
+
     const attributes = [
       PROJECT_ATTRIBUTE,
       { key: "entityType", value: "sensor_device" },
       { key: "sensor_type", value: sensor_type },
-      { key: "lat", value: lat },
-      { key: "lng", value: lng },
+      { key: "lat", value: latScaled },
+      { key: "lng", value: lngScaled },
       { key: "status", value: "active" },
       { key: "registered_at", value: Date.now() },
     ];

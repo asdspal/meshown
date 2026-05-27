@@ -12,6 +12,21 @@ export const PROJECT_ATTRIBUTE = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────
+// Attribute scale factors
+// Arkiv SDK stores numeric attributes as BigInt — only integers.
+// Floats must be scaled to integers before writing, divided when reading.
+// ─────────────────────────────────────────────────────────────
+
+/** Coordinates: micro-degrees. 1 degree = 1,000,000 units (~11 cm precision). */
+export const COORD_SCALE = 1_000_000;
+
+/** Sensor reading values: centi-units. 1 unit = 100 centi-units. */
+export const VALUE_SCALE = 100;
+
+/** Calibration offset values: milli-units. 1 unit = 1000 milli-units. */
+export const OFFSET_SCALE = 1000;
+
+// ─────────────────────────────────────────────────────────────
 // Creator wallet address — derived from AGENT_PRIVATE_KEY
 // Used for .createdBy() attribution on agent-written entities.
 // MUST match the address derived from AGENT_PRIVATE_KEY.

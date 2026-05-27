@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import type { Hex } from "viem";
 import { jsonToPayload, ExpirationTime } from "@arkiv-network/sdk/utils";
 
-import { walletClient, PROJECT_ATTRIBUTE } from "@/lib/arkiv";
+import { walletClient, PROJECT_ATTRIBUTE, OFFSET_SCALE } from "@/lib/arkiv";
 import { verifyWalletAuth } from "@/lib/auth";
 import { CalibrationRecordPayloadSchema } from "@/lib/schemas";
 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       { key: "calibrated_by", value: ownerAddress },
       { key: "valid_from", value: now },
       { key: "valid_until", value: valid_until_ms },
-      { key: "offset_value", value: payloadResult.data.offset_value },
+      { key: "offset_value", value: Math.round(payloadResult.data.offset_value * OFFSET_SCALE) },
       { key: "offset_unit", value: payloadResult.data.offset_unit },
       { key: "calibration_method", value: payloadResult.data.calibration_method },
     ];
