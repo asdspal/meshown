@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import SensorDetailContent from "./sensor-detail-content";
 
 /**
@@ -36,7 +37,9 @@ export default async function SensorDetailPage({
           </div>
         }
       >
-        <SensorDetailContent entityKey={entityKey} />
+        <ErrorBoundary>
+          <SensorDetailContent entityKey={entityKey} />
+        </ErrorBoundary>
       </Suspense>
     </div>
   );

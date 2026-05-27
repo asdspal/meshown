@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import MapSidebar from "@/components/MapSidebar";
+import { useMeshStore } from "@/lib/store";
 
 /**
  * Mesh Map screen — hero route (`/`).
@@ -46,13 +47,19 @@ const DynamicMeshMap = dynamic(() => import("@/components/MeshMap"), {
 });
 
 export default function Home() {
+  const isSidebarCollapsed = useMeshStore((s) => s.isSidebarCollapsed);
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-zinc-950">
       {/* ── Sidebar ───────────────────────────────────── */}
       <MapSidebar />
 
       {/* ── Map area (Leaflet, dynamic import G2) ────── */}
-      <div className="h-full w-full pl-88">
+      <div
+        className={`h-full w-full transition-[padding] duration-300 ${
+          isSidebarCollapsed ? "pl-16" : "pl-88"
+        }`}
+      >
         <DynamicMeshMap />
       </div>
     </div>

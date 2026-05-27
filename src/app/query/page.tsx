@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import QueryContent from "./query-content";
 
 /**
@@ -23,7 +24,9 @@ export default function QueryPage() {
         </div>
       }
     >
-      <QueryContent />
+      <ErrorBoundary>
+        <QueryContent />
+      </ErrorBoundary>
     </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import DashboardContent from "./dashboard-content";
 
 /**
@@ -26,7 +27,9 @@ export default function DashboardPage() {
           </div>
         }
       >
-        <DashboardContent />
+        <ErrorBoundary>
+          <DashboardContent />
+        </ErrorBoundary>
       </Suspense>
     </div>
   );

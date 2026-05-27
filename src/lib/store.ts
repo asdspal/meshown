@@ -39,6 +39,12 @@ export interface MeshStore {
   mapMode: "browse" | "query";
   setMapMode: (mode: "browse" | "query") => void;
 
+  // ── Sidebar collapse (mobile responsiveness) ────────────
+  /** Whether the sidebar is collapsed (default true on < md screens) */
+  isSidebarCollapsed: boolean;
+  setIsSidebarCollapsed: (v: boolean) => void;
+  toggleSidebar: () => void;
+
   // ── Wallet ──────────────────────────────────────────────
   /** Connected wallet address from wagmi useAccount() */
   walletAddress: string | null;
@@ -81,6 +87,11 @@ export const useMeshStore = create<MeshStore>()((set) => ({
   // Map mode
   mapMode: "browse",
   setMapMode: (mode) => set({ mapMode: mode }),
+
+  // Sidebar collapse (mobile responsiveness)
+  isSidebarCollapsed: false,
+  setIsSidebarCollapsed: (v) => set({ isSidebarCollapsed: v }),
+  toggleSidebar: () => set((s) => ({ isSidebarCollapsed: !s.isSidebarCollapsed })),
 
   // Wallet
   walletAddress: null,

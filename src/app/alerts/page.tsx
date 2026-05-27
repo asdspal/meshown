@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import AlertFeedContent from "./alert-feed-content";
 
 /**
@@ -25,7 +26,9 @@ export default function AlertFeedPage() {
           </div>
         }
       >
-        <AlertFeedContent />
+        <ErrorBoundary>
+          <AlertFeedContent />
+        </ErrorBoundary>
       </Suspense>
     </div>
   );

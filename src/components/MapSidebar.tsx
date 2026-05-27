@@ -3,6 +3,7 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useMeshStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 /**
  * Floating left sidebar for the Mesh Map screen (Screen 1).
@@ -40,6 +41,9 @@ export default function MapSidebar() {
   const {
     mapMode,
     setMapMode,
+    isSidebarCollapsed,
+    toggleSidebar,
+    setIsSidebarCollapsed,
     minQualityScore,
     setMinQualityScore,
     selectedSensorType,
@@ -50,6 +54,15 @@ export default function MapSidebar() {
     meshQueryResults,
     isQuerying,
   } = useMeshStore();
+
+  /** Default to collapsed on screens < md (768px) */
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    if (mq.matches) setIsSidebarCollapsed(true);
+    const handler = (e: MediaQueryListEvent) => setIsSidebarCollapsed(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [setIsSidebarCollapsed]);
 
   const hasBbox = boundingBox !== null;
 
@@ -71,18 +84,63 @@ export default function MapSidebar() {
   }
 
   return (
+    <>
+      {/* ── Hamburger toggle button (always visible) ──── */}
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        className="fixed left-4 top-4 z-[1001] flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-zinc-900/90 text-zinc-300 shadow-lg backdrop-blur-md transition-colors hover:bg-zinc-800 hover:text-white"
+        aria-label={isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}
+      >
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+        >
+          {isSidebarCollapsed ? (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+            />
+          ) : (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          )}
+        </svg>
+      </button>
+
+      {/* ── Sidebar panel ─────────────────────────────── */}
+      {!isSidebarCollapsed && (
     <aside
-      className="fixed left-4 top-4 bottom-4 z-[1000] w-80 flex flex-col gap-4 overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900/90 p-5 shadow-2xl backdrop-blur-md"
+      className="fixed left-4 top-4 bottom-4 z-[1000] w-80 flex flex-col gap-4 overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900/90 p-5 shadow-2xl backdrop-blur-md max-md:left-16"
       aria-label="Mesh Map controls"
     >
       {/* ── Logo + tagline ─────────────────────────────── */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-white">
-          Mesh<span className="text-indigo-400">Own</span>
-        </h1>
-        <p className="mt-0.5 text-xs text-zinc-400">
-          Own your sensor data
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-white">
+            Mesh<span className="text-indigo-400">Own</span>
+          </h1>
+          <p className="mt-0.5 text-xs text-zinc-400">
+            Own your sensor data
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:text-white md:hidden"
+          aria-label="Close sidebar"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       {/* ── Wallet connection [G5] ────────────────────── */}
@@ -246,5 +304,7 @@ export default function MapSidebar() {
         Powered by Arkiv · Braga Testnet
       </div>
     </aside>
+      )}
+    </>
   );
 }
