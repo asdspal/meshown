@@ -119,6 +119,8 @@ MeshOwn puts every reading, its quality attestation, and its calibration lineage
 
 ### 1. Clone & Install
 
+> A [`.env.example`](.env.example) template is included in the repo with all required variables listed.
+
 ```bash
 git clone <your-repo-url> meshown
 cd meshown
