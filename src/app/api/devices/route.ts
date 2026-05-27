@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
 
     // ── 1. Parse optional query parameters ──────────────────
+    const owner = searchParams.get("owner");
     const latMin = searchParams.get("lat_min");
     const latMax = searchParams.get("lat_max");
     const lngMin = searchParams.get("lng_min");
@@ -35,6 +36,14 @@ export async function GET(request: NextRequest) {
     const sensorType = searchParams.get("sensor_type");
     const limitParam = searchParams.get("limit");
     const limit = limitParam ? parseInt(limitParam, 10) : 100;
+
+    // Validate owner address format if provided
+    if (owner && !/^0x[0-9a-fA-F]{40}$/.test(owner)) {
+      return Response.json(
+        { error: "owner must be a valid Ethereum address (0x + 40 hex chars)" },
+        { status: 400 },
+      );
+    }
 
     if (isNaN(limit) || limit < 1 || limit > 1000) {
       return Response.json(
@@ -74,15 +83,21 @@ export async function GET(request: NextRequest) {
     }
 
     // ── 3. Execute query (H1: scoped to agent creator) ─────
-    const result = await publicClient
+    let queryBuilder = publicClient
       .buildQuery()
       .where(predicates)
       .createdBy(CREATOR_WALLET_ADDRESS)
       .withPayload(true)
       .withAttributes(true)
       .withMetadata(true)
-      .limit(limit)
-      .fetch();
+      .limit(limit);
+
+    // Optional: filter by owner address (Phase 3: .ownedBy(walletAddress))
+    if (owner) {
+      queryBuilder = queryBuilder.ownedBy(owner as `0x${string}`);
+    }
+
+    const result = await queryBuilder.fetch();
 
     // ── 4. Map entities to response shape ───────────────────
     // [GAP] Blueprint assumes `total: 42` but SDK returns no count.
