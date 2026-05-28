@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+#tools
+/memory-bank/*
+
 # next.js
 /.next/
 /out/
