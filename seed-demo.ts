@@ -30,7 +30,7 @@ const GEO_SCALE = 1_000_000
 const scaleLat  = (lat: number) => Math.round(lat * GEO_SCALE)
 const scaleLng  = (lng: number) => Math.round(lng * GEO_SCALE)
 // Sensor float values: multiply by 10 so 28.4 → 284 (integer). Divide by 10 on read.
-const scaleVal  = (v: number)   => Math.round(v * 10)
+const scaleVal  = (v: number)   => Math.round(v * 100) // matches app VALUE_SCALE = 100
 
 // ─── Wallet ───────────────────────────────────────────────────────────────────
 
