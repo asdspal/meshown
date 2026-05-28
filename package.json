@@ -12,6 +12,7 @@
     "@arkiv-network/sdk": "0.6.8",
     "@rainbow-me/rainbowkit": "2.2.11",
     "@tanstack/react-query": "^5.100.14",
+    "@walletconnect/ethereum-provider": "^2.23.9",
     "leaflet": "1.9.4",
     "leaflet-draw": "1.0.4",
     "next": "16.2.6",
