@@ -16,7 +16,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MeshOwn",
   description: "Decentralized mesh network ownership on Arkiv",
-  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
