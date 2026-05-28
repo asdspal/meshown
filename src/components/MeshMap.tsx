@@ -298,9 +298,9 @@ export default function MeshMap() {
     };
   }, []);
 
-  // Default center: midpoint of Europe (works for demo; production would use device bounds)
-  const defaultCenter: [number, number] = [50.0, 10.0];
-  const defaultZoom = 4;
+  // Default center: Prayagraj, India — where the demo sensors are deployed
+  const defaultCenter: [number, number] = [25.4358, 81.8463];
+  const defaultZoom = 11;
 
   return (
     <div className="relative h-full w-full">
