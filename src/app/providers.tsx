@@ -10,29 +10,36 @@ import { config } from "@/config/wagmi";
 import "@rainbow-me/rainbowkit/styles.css";
 
 // ─── QueryClient singleton ────────────────────────────────────────────────────
-// One instance per browser session, new instance per server render.
 let browserQueryClient: QueryClient | undefined;
 
 function getQueryClient() {
-  if (typeof window === "undefined") return new QueryClient({
-    defaultOptions: { queries: { staleTime: 60_000 } },
-  });
-  if (!browserQueryClient) browserQueryClient = new QueryClient({
-    defaultOptions: { queries: { staleTime: 60_000 } },
-  });
+  if (typeof window === "undefined") {
+    return new QueryClient({
+      defaultOptions: { queries: { staleTime: 60_000 } },
+    });
+  }
+  if (!browserQueryClient) {
+    browserQueryClient = new QueryClient({
+      defaultOptions: { queries: { staleTime: 60_000 } },
+    });
+  }
   return browserQueryClient;
 }
 
 // ─── Providers ────────────────────────────────────────────────────────────────
-// React 19 + RainbowKit 2 hydration fix:
-// RainbowKit reads localStorage and window.ethereum during its first render.
-// Next.js App Router pre-renders 'use client' components to an HTML shell on
-// the server — this produces different HTML than the client render → React #418.
+// React 19 + RainbowKit 2 hydration fix (React error #418):
 //
-// Fix: render a plain shell on the server, swap to the real providers only after
-// the client has mounted. `mounted` starts false (same on server and client),
-// flips to true in useEffect (client-only), causing a single intentional
-// re-render with no hydration mismatch.
+// RainbowKitProvider reads localStorage and window.ethereum during its first
+// render, producing different HTML on server vs client → hard hydration crash
+// in React 19.
+//
+// Fix: WagmiProvider and QueryClientProvider render on both server and client
+// (safe — no browser APIs accessed). RainbowKitProvider is deferred until
+// after client mount via the `mounted` flag, so it never runs on the server
+// and never causes a content mismatch.
+//
+// This keeps useAccount() / useConfig() working during prerender (they need
+// WagmiProvider) while eliminating the RainbowKit mismatch.
 export function Providers({ children }: { children: ReactNode }) {
   const queryClient = getQueryClient();
   const [mounted, setMounted] = useState(false);
@@ -41,23 +48,18 @@ export function Providers({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Server render + first client render: providers omitted entirely.
-  // This matches perfectly — no mismatch possible.
-  if (!mounted) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    );
-  }
-
-  // Subsequent client renders: full provider tree with RainbowKit.
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={darkTheme({ accentColor: "#6366f1" })}>
-          {children}
-        </RainbowKitProvider>
+        {mounted ? (
+          <RainbowKitProvider theme={darkTheme({ accentColor: "#6366f1" })}>
+            {children}
+          </RainbowKitProvider>
+        ) : (
+          // Server + first client render: no RainbowKitProvider.
+          // ConnectButton won't render yet — that's fine, page shell loads first.
+          children
+        )}
       </QueryClientProvider>
     </WagmiProvider>
   );
